@@ -119,7 +119,7 @@ class GoogleDriveConnector(object):
                 self.logger.info('Refreshing token')
                 self._creds.refresh(self._http)
 
-            elif re.search(r'2\d{2}', res[0]['status']):
+            elif not re.search(r'2\d{2}', res[0]['status']):
                 self.logger.critical('Upload failed: {0}'.format(res))
                 raise StopIteration
 
