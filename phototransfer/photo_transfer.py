@@ -59,8 +59,9 @@ class PhotoTransfer(object):
     def process(self):
         self._load_processed_hashes()
         google_hashes = self._gdc.get_all_photo_md5s()
-        skip_hashes = google_hashes | self.processed_hashes
         for (photo_path, md5hash) in self._dbc.yield_all_photos(self.DROPBOX_DIRS):
+            skip_hashes = google_hashes | self.processed_hashes
+
             if md5hash in skip_hashes:
                 continue
             # do copy
