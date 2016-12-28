@@ -63,6 +63,7 @@ class PhotoTransfer(object):
             skip_hashes = google_hashes | self.processed_hashes
 
             if md5hash in skip_hashes:
+                self.logger.info('Skipping {0}'.format(photo_path))
                 continue
             # do copy
             self._copy_photo(photo_path, md5hash)
