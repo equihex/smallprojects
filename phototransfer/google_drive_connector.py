@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from os.path import basename
 from pprint import pprint
 
@@ -30,8 +31,9 @@ class GoogleDriveConnector(object):
             token_uri=config['google']['token_uri'],
             user_agent=config['google']['user_agent'],
         )
-        http = creds.authorize(httplib2.Http())
-        self.service = discovery.build('drive', 'v3', http=http)
+        self._http = creds.authorize(httplib2.Http())
+        creds.refresh(self._http)
+        self.service = discovery.build('drive', 'v3', http=self._http)
         self.f = self.service.files()
         self._next_photos_page_token = None
         self.hashes = []
@@ -89,16 +91,36 @@ class GoogleDriveConnector(object):
         #persist partials to files
         return set(self.hashes)
 
-    def upload_photo(self, file_path, photo_name):
+    def upload_file(self, file_path, photo_name):
         return self.f.create(media_body=file_path, body={'name': photo_name}).execute()
+
+    def upload_photo(self, file_path, photo_name):
+        """
+        https://picasaweb.google.com/data/feed/api/user/default/albumid/default
+        :param file_path:
+        :param photo_name:
+        :return:
+        """
+        with open(file_path, 'rb') as fin:
+            img_data = fin.read()
+        res = self._http.request(
+            "https://picasaweb.google.com/data/feed/api/user/default/albumid/default",
+            "POST",
+            body=img_data,
+            headers={
+                'Content-Type': 'image/jpeg',
+                'Content-Length': len(img_data),
+                'Slug': photo_name,
+            }
+        )
+        if not re.search(r'2\d{2}', res[0]['status']):
+            self.logger.critical('Upload failed: {0}'.format(res))
+            raise StopIteration
+
 
 if __name__ == '__main__':
     gdc = GoogleDriveConnector()
-    pprint(gdc.f.get(fileId='0B8NZdrRKKIkBeC1zS0V5bHd1bXM', fields='imageMediaMetadata').execute())
-    exit()
-
-    gdc.upload_photo('/Users/warnerj1/Downloads/D3C_7430.JPG')
-    exit()
-    pprint(gdc.service.files().get(fileId='1ZvSgHjvG_Vm5VAx4pdFZRvacicVpoHjh8Q', fields='imageMediaMetadata').execute())
-    pprint(gdc._get_photo_md5('1ZvSgHjvG_Vm5VAx4pdFZRvacicVpoHjh8Q'))
-    # 6dd090fff539b398d99ac4e116b458a2
+    res = gdc.upload_photo(
+        '/Users/warnerj1/PycharmProjects/smallprojects/phototransfer/22441b7280d5f63523bb6058a7636805.jpg',
+        'fooo',
+    )
