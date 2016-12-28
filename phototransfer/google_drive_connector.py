@@ -138,7 +138,7 @@ if __name__ == '__main__':
     gdc = GoogleDriveConnector()
 
     file_metadata = {
-        'name': 'Dropbox Photos',
+        'name': 'DropboxPhotos',
         'mimeType': 'application/vnd.google-apps.folder'
     }
     file = gdc.f.create(body=file_metadata,

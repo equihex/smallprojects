@@ -19,7 +19,7 @@ class PhotoTransfer(object):
         '/Camera Uploads/'
     ]
 
-    GDOCS_DB_FOLDER_ID = '0B8NZdrRKKIkBazJFcUxUZ3V0OW8'
+    GDOCS_DB_FOLDER_ID = '0B8NZdrRKKIkBRXhETkhEZFJRRm8'
 
     JSON_PROCESSED_FILE_PATH = 'processed_hashes.json'
 
