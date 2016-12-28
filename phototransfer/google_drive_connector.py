@@ -22,7 +22,7 @@ class GoogleDriveConnector(object):
         self.logger = BaseLogger.get_logger(self.__class__.__name__)
         with open('config.yaml') as fin:
             config = yaml.load(fin)
-        creds = OAuth2Credentials(
+        self._creds = OAuth2Credentials(
             access_token=config['google']['access_token'],
             refresh_token=config['google']['refresh_token'],
             client_id=config['google']['client_id'],
@@ -31,8 +31,8 @@ class GoogleDriveConnector(object):
             token_uri=config['google']['token_uri'],
             user_agent=config['google']['user_agent'],
         )
-        self._http = creds.authorize(httplib2.Http())
-        creds.refresh(self._http)
+        self._http = self._creds.authorize(httplib2.Http())
+        self._creds.refresh(self._http)
         self.service = discovery.build('drive', 'v3', http=self._http)
         self.f = self.service.files()
         self._next_photos_page_token = None
@@ -103,19 +103,29 @@ class GoogleDriveConnector(object):
         """
         with open(file_path, 'rb') as fin:
             img_data = fin.read()
-        res = self._http.request(
-            "https://picasaweb.google.com/data/feed/api/user/default/albumid/default",
-            "POST",
-            body=img_data,
-            headers={
-                'Content-Type': 'image/jpeg',
-                'Content-Length': len(img_data),
-                'Slug': photo_name,
-            }
-        )
-        if not re.search(r'2\d{2}', res[0]['status']):
-            self.logger.critical('Upload failed: {0}'.format(res))
-            raise StopIteration
+        while True:
+            res = self._http.request(
+                "https://picasaweb.google.com/data/feed/api/user/default/albumid/default",
+                "POST",
+                body=img_data,
+                headers={
+                    'Content-Type': 'image/jpeg',
+                    'Content-Length': len(img_data),
+                    'Slug': photo_name,
+                }
+            )
+
+            if res[0]['status'] == '403':
+                self.logger.info('Refreshing token')
+                self._creds.refresh(self._http)
+
+            elif re.search(r'2\d{2}', res[0]['status']):
+                self.logger.critical('Upload failed: {0}'.format(res))
+                raise StopIteration
+
+            else:
+                return res
+
 
 
 if __name__ == '__main__':
