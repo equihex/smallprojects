@@ -19,6 +19,8 @@ class PhotoTransfer(object):
         '/Camera Uploads/'
     ]
 
+    GDOCS_DB_FOLDER_ID = '0B8NZdrRKKIkBU3gtbnJJNG51bk0'
+
     JSON_PROCESSED_FILE_PATH = 'processed_hashes.json'
 
     def __init__(self):
@@ -46,7 +48,11 @@ class PhotoTransfer(object):
         self.logger.info('Copying photo {0}'.format(path))
         local_path = '{0}.jpg'.format(md5hash)
         self._dbc.download_file(path, local_path)
-        self._gdc.upload_photo(local_path, md5hash)
+        self._gdc.upload_file(
+            local_path,
+            photo_name=md5hash,
+            folder_id=self.GDOCS_DB_FOLDER_ID,
+        )
         self.logger.info('Copy complete')
         os.unlink(local_path)
 

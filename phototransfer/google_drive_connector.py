@@ -91,8 +91,11 @@ class GoogleDriveConnector(object):
         #persist partials to files
         return set(self.hashes)
 
-    def upload_file(self, file_path, photo_name):
-        return self.f.create(media_body=file_path, body={'name': photo_name}).execute()
+    def upload_file(self, file_path, photo_name, folder_id=None):
+        meta = {'name': photo_name}
+        if folder_id:
+            meta['parents'] = [folder_id]
+        return self.f.create(media_body=file_path, body=meta).execute()
 
     def upload_photo(self, file_path, photo_name):
         """
@@ -128,9 +131,17 @@ class GoogleDriveConnector(object):
 
 
 
+
+
+
 if __name__ == '__main__':
     gdc = GoogleDriveConnector()
-    res = gdc.upload_photo(
-        '/Users/warnerj1/PycharmProjects/smallprojects/phototransfer/22441b7280d5f63523bb6058a7636805.jpg',
-        'fooo',
-    )
+
+    file_metadata = {
+        'name': 'Dropbox Photos',
+        'mimeType': 'application/vnd.google-apps.folder'
+    }
+    file = gdc.f.create(body=file_metadata,
+                                        fields='id').execute()
+    print 'Folder ID: %s' % file.get('id')
+
